@@ -1,1 +1,1 @@
-export const storefrontSectionTypes = ['header', 'announcement', 'hero', 'product_grid', 'product_detail', 'image_text', 'rich_text', 'faq', 'testimonials', 'cta', 'footer'] as const
+export const storefrontSectionTypes = ['header', 'announcement', 'hero', 'product_grid', 'product_detail', 'image_text', 'rich_text', 'faq', 'testimonials', 'cta', 'category_grid', 'product_carousel', 'video', 'stats', 'logo_cloud', 'newsletter', 'spacer', 'footer'] as const

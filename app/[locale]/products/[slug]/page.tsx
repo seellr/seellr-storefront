@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, ArrowRight, RefreshCw, ShoppingBag } from 'lucide-react'
+import { RefreshCw, ShoppingBag } from 'lucide-react'
 import { use } from 'react'
 import { useProduct } from '@/hooks/use-products'
 import type { Locale } from '@/lib/commerce/types'
