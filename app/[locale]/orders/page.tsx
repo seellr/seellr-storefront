@@ -1,0 +1,7 @@
+'use client'
+
+import Link from 'next/link'
+import { use, useEffect, useState } from 'react'
+import { commerceClient } from '@/lib/commerce/client'
+import type { Order } from '@/lib/commerce/types'
+export default function OrdersPage({ params }: { params: Promise<{ locale: string }> }) { const locale = use(params).locale; const ar = locale === 'ar'; const [orders, setOrders] = useState<Order[]>([]); const [loading, setLoading] = useState(true); useEffect(() => { void commerceClient.orders().then((result) => setOrders(result.data ?? [])).catch(() => undefined).finally(() => setLoading(false)) }, []); return <main className="mx-auto max-w-4xl px-5 py-16 sm:px-8 sm:py-24"><h1 className="text-4xl font-bold">{ar ? 'طلباتي' : 'My orders'}</h1>{loading ? <div className="mt-8 h-32 animate-pulse rounded-2xl bg-muted" /> : orders.length === 0 ? <p className="mt-8 rounded-2xl border border-dashed p-12 text-center text-muted-foreground">{ar ? 'لا توجد طلبات بعد.' : 'No orders yet.'}</p> : <div className="mt-8 divide-y rounded-2xl border">{orders.map((order) => <Link key={order.ulid} href={`/${locale}/orders/${order.ulid}`} className="flex items-center justify-between gap-4 p-5 hover:bg-muted/40"><div><p className="font-semibold">{order.invoice_number ?? order.ulid}</p><p className="mt-1 text-sm text-muted-foreground">{order.status.label}</p></div><strong>{order.total} {order.currency}</strong></Link>)}</div>}</main> }

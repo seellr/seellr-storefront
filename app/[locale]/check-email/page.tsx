@@ -1,0 +1,2 @@
+import { use } from 'react'
+export default function CheckEmailPage({ params }: { params: Promise<{ locale: string }> }) { const ar = use(params).locale === 'ar'; return <main className="mx-auto flex min-h-[70vh] max-w-xl items-center justify-center px-5 py-16 text-center"><div><h1 className="text-3xl font-bold">{ar ? 'تحقق من بريدك الإلكتروني' : 'Check your email'}</h1><p className="mt-4 leading-8 text-muted-foreground">{ar ? 'أرسلنا رابط التحقق إلى بريدك الإلكتروني.' : 'We sent a verification link to your email address.'}</p></div></main> }

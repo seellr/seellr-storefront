@@ -1,0 +1,5 @@
+import type { CSSProperties } from 'react'
+import type { StoreLocale, StorefrontPage, ThemeSettings } from './types'
+import { storefrontSections } from './sections'
+
+export function PageRenderer({ page, locale, settings = {} }: { page: StorefrontPage; locale: StoreLocale; settings?: ThemeSettings }) { const style = { '--theme-primary': settings.primary_color ?? 'oklch(0.55 0.22 264)', '--theme-background': settings.background_color ?? 'var(--background)', '--theme-foreground': settings.foreground_color ?? 'var(--foreground)', '--theme-font-heading': settings.heading_font ?? 'var(--font-heading)', '--theme-font-body': settings.body_font ?? 'var(--font-body)' } as CSSProperties; return <main lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} style={style} className="min-h-full bg-[var(--theme-background)] text-[var(--theme-foreground)] [font-family:var(--theme-font-body)]">{page.sections.filter((section) => !section.hidden).map((section) => { const Component = storefrontSections[section.type]; if (!Component) return null; return <div key={section.id} data-section-id={section.id}><Component section={section} locale={locale} /></div> })}</main> }
