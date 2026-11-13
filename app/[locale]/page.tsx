@@ -1,27 +1,42 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { hasLocale } from 'next-intl'
 import { PageRenderer } from '@/lib/theme/PageRenderer'
-import type { StoreLocale, StorefrontPage } from '@/lib/theme/types'
+import { getPageLayout } from '@/lib/theme/api'
+import { fetchPublishedProducts } from '@/lib/commerce/server'
+import type { StoreLocale } from '@/lib/theme/types'
 import { routing } from '@/lib/i18n/routing'
-import { getPublishedPage, getPublishedTheme } from '@/lib/theme/api'
 
-export default async function LocalizedHome({ params }: PageProps<'/[locale]'>) {
+function HomeSkeleton() {
+  return (
+    <main className="min-h-dvh animate-pulse">
+      <div className="h-16 border-b bg-muted/40" />
+      <div className="mx-auto max-w-4xl px-5 py-28 text-center">
+        <div className="mx-auto h-10 w-2/3 rounded bg-muted" />
+        <div className="mx-auto mt-4 h-4 w-1/2 rounded bg-muted" />
+      </div>
+      <div className="mx-auto grid max-w-7xl gap-5 px-5 pb-24 sm:grid-cols-3">
+        {[0, 1, 2].map((item) => <div key={item} className="h-72 rounded-2xl bg-muted" />)}
+      </div>
+    </main>
+  )
+}
+
+async function HomeContent({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   if (!hasLocale(routing.locales, locale)) notFound()
+  const [layout, products] = await Promise.all([
+    getPageLayout('home', locale as StoreLocale),
+    fetchPublishedProducts(locale as StoreLocale),
+  ])
+  console.log(products)
+  return <PageRenderer page={layout.page} locale={locale as StoreLocale} settings={layout.settings} products={products} />
+}
 
-  const publishedPage = await getPublishedPage('home', locale as StoreLocale)
-  const themeSettings = await getPublishedTheme(locale as StoreLocale)
-  if (publishedPage) return <PageRenderer page={publishedPage} locale={locale as StoreLocale} settings={themeSettings} />
-
-  const page: StorefrontPage = {
-    id: 'home', type: 'home', sections: [
-      { id: 'header', type: 'header', settings: { label: { ar: 'متجري', en: 'My store' } } },
-      { id: 'announcement', type: 'announcement', settings: { message: { ar: 'شحن مجاني لفترة محدودة', en: 'Free shipping for a limited time' } } },
-      { id: 'hero', type: 'hero', settings: { title: { ar: 'اكتشف ما يناسبك', en: 'Find what fits you' }, subtitle: { ar: 'تجربة متجر بسيطة وجميلة', en: 'A simple, beautiful shopping experience' } } },
-      { id: 'products', type: 'product_grid', settings: { title: { ar: 'منتجات مميزة', en: 'Featured products' }, count: 3 } },
-      { id: 'cta', type: 'cta', settings: { title: { ar: 'ابدأ الآن', en: 'Get started today' }, button_label: { ar: 'تسوق الآن', en: 'Shop now' } } },
-      { id: 'footer', type: 'footer', settings: { label: { ar: 'جميع الحقوق محفوظة', en: 'All rights reserved' } } },
-    ],
-  }
-  return <PageRenderer page={page} locale={locale as StoreLocale} settings={themeSettings} />
+export default function LocalizedHome({ params }: PageProps<'/[locale]'>) {
+  return (
+    <Suspense fallback={<HomeSkeleton />}>
+      <HomeContent params={params} />
+    </Suspense>
+  )
 }

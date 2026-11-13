@@ -1,13 +1,67 @@
-'use client'
+import { Suspense } from 'react'
+import { notFound } from 'next/navigation'
+import { hasLocale } from 'next-intl'
+import type { Metadata } from 'next'
+import { PageRenderer } from '@/lib/theme/PageRenderer'
+import { getPageLayout } from '@/lib/theme/api'
+import { fetchPublishedProduct, fetchPublishedProducts } from '@/lib/commerce/server'
+import type { StoreLocale } from '@/lib/theme/types'
+import { routing } from '@/lib/i18n/routing'
 
-import { RefreshCw, ShoppingBag } from 'lucide-react'
-import { use } from 'react'
-import { useProduct } from '@/hooks/use-products'
-import type { Locale } from '@/lib/commerce/types'
+type ProductRouteProps = PageProps<'/[locale]/products/[slug]'>
 
-export default function ProductPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
-  const value = use(params) as { locale: Locale; slug: string }; const ar = value.locale === 'ar'; const query = useProduct(value.slug)
-  if (query.isLoading) return <main className="mx-auto max-w-7xl animate-pulse px-5 py-24"><div className="grid gap-10 md:grid-cols-2"><div className="aspect-square rounded-3xl bg-muted" /><div className="space-y-5"><div className="h-10 w-2/3 rounded bg-muted" /><div className="h-24 rounded bg-muted" /></div></div></main>
-  if (query.isError || !query.data) return <main className="mx-auto flex max-w-xl flex-col items-center gap-4 px-5 py-28 text-center"><p className="font-semibold">{ar ? 'المنتج غير متاح' : 'Product not found'}</p><button type="button" onClick={() => void query.refetch()} className="inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold"><RefreshCw className="size-4" />{ar ? 'إعادة المحاولة' : 'Try again'}</button></main>
-  const product = query.data; return <main className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24"><div className="grid gap-10 md:grid-cols-2 md:items-start"><div className="aspect-square rounded-3xl bg-gradient-to-br from-primary/20 via-muted to-secondary" /><div><p className="text-sm font-semibold text-primary">{product.featured ? (ar ? 'منتج مميز' : 'Featured product') : product.currency}</p><h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">{product.name}</h1><p className="mt-5 text-lg leading-8 text-muted-foreground">{product.one_liner}</p><div className="mt-7 text-3xl font-bold">{product.sale_price ?? product.base_price} {product.currency}</div><button type="button" className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"><ShoppingBag className="size-4" />{ar ? 'أضف إلى السلة' : 'Add to cart'}</button>{product.description?.full_description && <section className="mt-12 border-t pt-8"><h2 className="text-xl font-bold">{ar ? 'عن المنتج' : 'About this product'}</h2><p className="mt-4 leading-8 text-muted-foreground">{product.description.full_description}</p></section>}</div></div>{product.faqs && product.faqs.length > 0 && <section className="mx-auto mt-20 max-w-3xl"><h2 className="mb-6 text-2xl font-bold">{ar ? 'الأسئلة الشائعة' : 'Frequently asked questions'}</h2><div className="divide-y rounded-2xl border">{product.faqs.map((faq, index) => <details key={index} className="p-5"><summary className="cursor-pointer font-semibold">{faq.question}</summary><p className="mt-3 text-sm leading-7 text-muted-foreground">{faq.answer}</p></details>)}</div></section>}</main>
+function ProductSkeleton() {
+  return (
+    <main className="mx-auto max-w-7xl animate-pulse px-5 py-24">
+      <div className="grid gap-10 md:grid-cols-2">
+        <div className="aspect-square rounded-3xl bg-muted" />
+        <div className="space-y-5">
+          <div className="h-10 w-2/3 rounded bg-muted" />
+          <div className="h-24 rounded bg-muted" />
+          <div className="h-12 w-40 rounded-full bg-muted" />
+        </div>
+      </div>
+    </main>
+  )
+}
+
+async function ProductContent({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const { locale, slug } = await params
+  if (!hasLocale(routing.locales, locale)) notFound()
+  const [product, layout, related] = await Promise.all([
+    fetchPublishedProduct(slug, locale),
+    getPageLayout('product', locale as StoreLocale),
+    fetchPublishedProducts(locale),
+  ])
+  if (!product) notFound()
+
+  return (
+    <PageRenderer
+      page={layout.page}
+      locale={locale as StoreLocale}
+      settings={layout.settings}
+      product={product}
+      products={related}
+    />
+  )
+}
+
+export async function generateMetadata({ params }: ProductRouteProps): Promise<Metadata> {
+  const { locale, slug } = await params
+  if (!hasLocale(routing.locales, locale)) return {}
+  const product = await fetchPublishedProduct(slug, locale as StoreLocale)
+  if (!product) return {}
+  return {
+    title: product.seo_meta?.meta_title ?? product.name,
+    description: product.seo_meta?.meta_description ?? product.one_liner ?? undefined,
+    openGraph: product.seo_meta?.og_image_url ? { images: [product.seo_meta.og_image_url] } : undefined,
+  }
+}
+
+export default function ProductPage({ params }: ProductRouteProps) {
+  return (
+    <Suspense fallback={<ProductSkeleton />}>
+      <ProductContent params={params} />
+    </Suspense>
+  )
 }
