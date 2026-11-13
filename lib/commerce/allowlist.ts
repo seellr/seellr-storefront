@@ -6,11 +6,11 @@ const safe = (value: string) => /^[A-Za-z0-9_./?=&%+:-]+$/.test(value) && !value
 export function resolveCommerceTarget(scope: Scope, segments: string[], method: string): CommerceTarget | null {
   const path = segments.join('/')
   if (!safe(path)) return null
-  if (scope === 'public' && method === 'GET' && (path === 'plans' || path === 'product-types' || path === 'shipping-methods' || path === 'locale' || path === 'locale/defaults' || path === 'ai-tools' || /^products\/[A-Za-z0-9_-]+$/.test(path) || /^search\/products$/.test(path) || /^coupons\/.+\/validate$/.test(path) || /^shipments\/[A-Za-z0-9_-]+\/track$/.test(path) || /^quiz\/.+$/.test(path) || /^ai-tools\/.+$/.test(path))) return { backendPath: `/${path}`, auth: 'public' }
+  if (scope === 'public' && method === 'GET' && (path === 'plans' || path === 'products' || path === 'product-types' || path === 'shipping-methods' || path === 'locale' || path === 'locale/defaults' || path === 'ai-tools' || /^products\/[A-Za-z0-9_-]+$/.test(path) || /^search\/products$/.test(path) || /^coupons\/.+\/validate$/.test(path) || /^shipments\/[A-Za-z0-9_-]+\/track$/.test(path) || /^quiz\/.+$/.test(path) || /^ai-tools\/.+$/.test(path))) return { backendPath: `/${path}`, auth: 'public' }
   if (scope === 'public' && method === 'POST' && (path === 'analytics/track' || path === 'email/unsubscribe')) return { backendPath: `/${path}`, auth: 'public' }
   if (scope === 'public' && path.startsWith('quiz/') && ['GET', 'POST'].includes(method)) return { backendPath: `/${path}`, auth: 'public' }
   if (scope === 'public' && path.startsWith('ai-tools') && method === 'GET') return { backendPath: `/${path}`, auth: 'public' }
-  if (scope === 'guest' && /^cart(?:\/items\/[^/]+|\/coupon)?$/.test(path) && ['GET', 'POST', 'DELETE'].includes(method)) return { backendPath: `/guest/${path}`, auth: 'guest' }
+  if (scope === 'guest' && (/^cart$/.test(path) || /^cart\/items(?:\/[^/]+)?$/.test(path) || path === 'cart/coupon') && ['GET', 'POST', 'DELETE'].includes(method)) return { backendPath: `/guest/${path}`, auth: 'guest' }
   if (scope === 'guest' && path === 'cart/merge' && method === 'POST') return { backendPath: '/guest/cart/merge', auth: 'guest' }
   if (scope === 'customer' && path === 'auth/login' && method === 'POST') return { backendPath: '/customer/auth/login', auth: 'public' }
   if (scope === 'customer' && path === 'auth/register' && method === 'POST') return { backendPath: '/customer/auth/register', auth: 'public' }

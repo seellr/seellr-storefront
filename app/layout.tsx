@@ -16,6 +16,19 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ar" dir="rtl" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        {/*
+          Restore the saved light/dark preference before the first paint so the
+          storefront never flashes the wrong theme. The header toggle writes to
+          the same `seellr-theme` key.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('seellr-theme');if(t?t==='dark':window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark')}}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

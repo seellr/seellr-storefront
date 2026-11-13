@@ -12,7 +12,13 @@ export async function POST(request: NextRequest) {
     if (!shape.success) return NextResponse.json({ success: false, error_code: 'bad_backend_shape' }, { status: 502 })
     const data = shape.data.data as { access_token?: string; expires_in?: number; user?: unknown } | undefined
     const response = NextResponse.json({ success: shape.data.success, message: shape.data.message, data: { user: data?.user }, error_code: shape.data.error_code, errors: shape.data.errors }, { status: upstream.status })
-    if (upstream.ok && data?.access_token) response.cookies.set('customer_token', data.access_token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: data.expires_in ?? 60 * 60 * 24 * 7, path: '/' })
+    if (upstream.ok && data?.access_token) {
+      const maxAge = data.expires_in ?? 60 * 60 * 24 * 7
+      response.cookies.set('customer_token', data.access_token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge, path: '/' })
+      // A readable marker lets client components choose the customer cart
+      // instead of the guest cart without exposing the auth token.
+      response.cookies.set('customer_session', '1', { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge, path: '/' })
+    }
     return response
   } catch { return NextResponse.json({ success: false, error_code: 'bad_gateway', message: 'Storefront service is unavailable' }, { status: 502 }) }
 }
